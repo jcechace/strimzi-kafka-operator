@@ -6,8 +6,11 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+
+import java.util.Map;
 
 /**
  * This class is a temporary work-around for the fact that Fabric8 doesn't
@@ -30,18 +33,21 @@ public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOpera
         private final String name;
         private final String clusterRoleName;
         private final OwnerReference ownerRef;
+        private final Labels labels;
 
         public RoleBinding(
                 String name,
                 String clusterRoleName,
                 String serviceAccountNamespace,
                 String serviceAccountName,
-                OwnerReference ownerRef) {
+                OwnerReference ownerRef,
+                Labels labels) {
             this.name = name;
             this.clusterRoleName = clusterRoleName;
             this.serviceAccountNamespace = serviceAccountNamespace;
             this.serviceAccountName = serviceAccountName;
             this.ownerRef = ownerRef;
+            this.labels = labels;
         }
         public String toString() {
             return "{\"apiVersion\": \"" + GROUP + "/" + API_VERSION + "\"," +
@@ -50,6 +56,7 @@ public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOpera
                    "  \"name\": \"" + name + "\"," +
                    "  \"labels\":{" +
                    "    \"app\": \"strimzi\"" +
+                    labelsToString(labels) +
                     "}," +
                     "        \"ownerReferences\": [" +
                     "            {" +
@@ -76,6 +83,13 @@ public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOpera
         }
     }
 
+    private static String labelsToString(Labels labels) {
+        String output = "";
+        for (Map.Entry<String, String> entry : labels.toMap().entrySet()) {
+            output += ",    \"" + entry.getKey() + "\": \"" + entry.getValue() + "\"";
+        }
+        return output;
+    }
 
     private String urlWithoutName(String namespace) {
         return baseUrl + "apis/" + group + "/" + apiVersion + "/namespaces/" + namespace + "/" + plural;

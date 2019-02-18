@@ -969,6 +969,7 @@ public class KafkaCluster extends AbstractModel {
                     .withName(initContainerServiceAccountName(cluster))
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
                 .endMetadata()
             .build();
     }
