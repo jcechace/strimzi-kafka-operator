@@ -84,11 +84,11 @@ public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOpera
     }
 
     private static String labelsToString(Labels labels) {
-        String output = "";
+        StringBuffer sb = new StringBuffer();
         for (Map.Entry<String, String> entry : labels.toMap().entrySet()) {
-            output += ",    \"" + entry.getKey() + "\": \"" + entry.getValue() + "\"";
+            sb.append(",    \"" + entry.getKey() + "\": \"" + entry.getValue() + "\"");
         }
-        return output;
+        return sb.toString();
     }
 
     private String urlWithoutName(String namespace) {
