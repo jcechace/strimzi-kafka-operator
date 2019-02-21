@@ -49,14 +49,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.Response;
 
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -66,11 +60,6 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @SuppressWarnings({
         "checkstyle:ClassDataAbstractionCoupling",
@@ -468,27 +457,5 @@ public class ResourceUtils {
                 return new PemKeyCertOptions();
             }
         };
-    }
-
-    /**
-     * @deprecated this can be removed when  WorkaroundRbacOperator is removed.
-     */
-    @Deprecated
-    public static void mockHttpClientForWorkaroundRbac(KubernetesClient mockClient) {
-        when(mockClient.isAdaptable(OkHttpClient.class)).thenReturn(true);
-        OkHttpClient mc = mock(OkHttpClient.class);
-        try {
-            doAnswer(i -> {
-                Call call = mock(Call.class);
-                Request req = i.getArgument(0);
-                Response resp = new Response.Builder().protocol(Protocol.HTTP_1_1).request(req).code(200).message("OK").build();
-                doReturn(resp).when(call).execute();
-                return call;
-            }).when(mc).newCall(any());
-            when(mockClient.adapt(OkHttpClient.class)).thenReturn(mc);
-            when(mockClient.getMasterUrl()).thenReturn(new URL("http://localhost"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }
