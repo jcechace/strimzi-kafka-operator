@@ -9,11 +9,16 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -249,8 +254,30 @@ public class EntityTopicOperator extends AbstractModel {
             createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }
 
-    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), EntityOperator.EO_CLUSTER_ROLE_NAME,
-                namespace, EntityOperator.entityOperatorServiceAccountName(cluster), createOwnerReference(), labels);
+    public KubernetesRoleBinding generateRoleBinding(String namespace) {
+        KubernetesSubject ks = new KubernetesSubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
+                .withNamespace(namespace)
+                .build();
+
+        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+                .withName(EntityOperator.EO_CLUSTER_ROLE_NAME)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("ClusterRole")
+                .build();
+
+        KubernetesRoleBinding rb = new KubernetesRoleBindingBuilder()
+                .withNewMetadata()
+                .withName(roleBindingName(cluster))
+                .withNamespace(namespace)
+                .withOwnerReferences(createOwnerReference())
+                .withLabels(labels.toMap())
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .withSubjects(Collections.singletonList(ks))
+                .build();
+
+        return rb;
     }
 }

@@ -43,7 +43,6 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -472,7 +471,7 @@ public class ResourceUtils {
     }
 
     /**
-     * @deprecated this can be removed when {@link WorkaroundRbacOperator} is removed.
+     * @deprecated this can be removed when  WorkaroundRbacOperator is removed.
      */
     @Deprecated
     public static void mockHttpClientForWorkaroundRbac(KubernetesClient mockClient) {
