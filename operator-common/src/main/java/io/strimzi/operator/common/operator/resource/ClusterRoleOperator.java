@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ClusterRoleOperator extends AbstractResourceOperator<KubernetesClient, KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole, Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> {
+public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient, KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole, Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> {
 
     /**
      * Constructor
@@ -43,11 +43,11 @@ public class ClusterRoleOperator extends AbstractResourceOperator<KubernetesClie
     }
 
     @Override
-    protected Future<ReconcileResult<KubernetesClusterRole>> internalPatch(String namespace, String name, KubernetesClusterRole current, KubernetesClusterRole desired) {
+    protected Future<ReconcileResult<KubernetesClusterRole>> internalPatch(String name, KubernetesClusterRole current, KubernetesClusterRole desired) {
         return Future.succeededFuture(ReconcileResult.noop(current));
     }
 
-    public static KubernetesClusterRole convertYamlToClusterRole(String namespace, String yaml) {
+    public static KubernetesClusterRole convertYamlToClusterRole(String yaml) {
         try {
             ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
             Object obj = yamlReader.readValue(yaml, Object.class);
@@ -77,7 +77,6 @@ public class ClusterRoleOperator extends AbstractResourceOperator<KubernetesClie
                         .withKind(((LinkedHashMap) obj).get("kind").toString())
                         .withRules(rules)
                         .withNewMetadata()
-                        .withNamespace(namespace)
                         .withName(((LinkedHashMap) ((LinkedHashMap) obj).get("metadata")).get("name").toString())
                         .withLabels(labels)
                         .endMetadata()

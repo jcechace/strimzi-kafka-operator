@@ -271,7 +271,7 @@ public class ClusterRoleOperatorTest {
     @Test
     public void parseYAMLtoClusterRoleTest() {
         ClusterRoleOperator cro = new ClusterRoleOperator(Vertx.vertx(), mock(KubernetesClient.class));
-        KubernetesClusterRole cr = cro.convertYamlToClusterRole("test", yaml);
+        KubernetesClusterRole cr = cro.convertYamlToClusterRole(yaml);
         assertTrue(cr.getRules().get(0).getApiGroups().get(0).equals(""));
         assertTrue(cr.getRules().get(0).getResources().get(0).equals("serviceaccounts"));
         assertTrue(cr.getRules().get(0).getVerbs().size() == 5);

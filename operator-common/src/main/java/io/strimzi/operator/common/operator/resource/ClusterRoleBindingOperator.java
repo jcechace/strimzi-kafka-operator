@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
-public class ClusterRoleBindingOperator extends AbstractResourceOperator<KubernetesClient, KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> {
+public class ClusterRoleBindingOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient, KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> {
 
     /**
      * Constructor
@@ -31,7 +31,7 @@ public class ClusterRoleBindingOperator extends AbstractResourceOperator<Kuberne
     }
 
     @Override
-    protected Future<ReconcileResult<KubernetesClusterRoleBinding>> internalPatch(String namespace, String name, KubernetesClusterRoleBinding current, KubernetesClusterRoleBinding desired) {
+    protected Future<ReconcileResult<KubernetesClusterRoleBinding>> internalPatch(String name, KubernetesClusterRoleBinding current, KubernetesClusterRoleBinding desired) {
         return Future.succeededFuture(ReconcileResult.noop(current));
     }
 }

@@ -242,9 +242,8 @@ public class Main {
 
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()), Charset.defaultCharset()))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
-                    String namespace = config.getNamespaces().iterator().next();
-                    KubernetesClusterRole role = cro.convertYamlToClusterRole(namespace, yaml);
-                    Future fut = cro.reconcile(namespace, role.getMetadata().getName(), role);
+                    KubernetesClusterRole role = cro.convertYamlToClusterRole(yaml);
+                    Future fut = cro.reconcile(role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {
                     log.error("Failed to create Cluster Roles.", e);
