@@ -1079,6 +1079,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             fut.setHandler(res -> {
                 if (res.failed()) {
                     if (desired == null) {
+                        String debugMsg = "Ignoring forbidden access to ClusterRoleBindings which seems not needed while Kafka rack awareness is disabled.";
+                        if (res.cause() != null) {
+                            debugMsg += " " + res.cause().getMessage();
+                        }
+                        log.debug(debugMsg);
                         replacementFut.complete();
                     } else {
                         replacementFut.fail(res.cause());
@@ -1556,7 +1561,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> topicOperatorRoleBinding() {
+            String watchedNamespace = topicOperator != null ? topicOperator.getWatchedNamespace() : null;
             return withVoid(roleBindingOperator.reconcile(
+                    watchedNamespace != null && !watchedNamespace.isEmpty() ?
+                            watchedNamespace : namespace,
                     TopicOperator.roleBindingName(name),
                     toDeployment != null ? topicOperator.generateRoleBinding(namespace) : null));
         }
@@ -1646,14 +1654,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorTopicOpRoleBinding() {
+            String watchedNamespace = entityOperator != null && entityOperator.getTopicOperator() != null ?
+                    entityOperator.getTopicOperator().getWatchedNamespace() : null;
             return withVoid(roleBindingOperator.reconcile(
+                    watchedNamespace != null && !watchedNamespace.isEmpty() ?
+                            watchedNamespace : namespace,
                     EntityTopicOperator.roleBindingName(name),
                     eoDeployment != null && entityOperator.getTopicOperator() != null ?
                             entityOperator.getTopicOperator().generateRoleBinding(namespace) : null));
         }
 
         Future<ReconciliationState> entityOperatorUserOpRoleBinding() {
+            String watchedNamespace = entityOperator != null && entityOperator.getUserOperator() != null ?
+                    entityOperator.getUserOperator().getWatchedNamespace() : null;
             return withVoid(roleBindingOperator.reconcile(
+                    watchedNamespace != null && !watchedNamespace.isEmpty() ?
+                            watchedNamespace : namespace,
                     EntityUserOperator.roleBindingName(name),
                     eoDeployment != null && entityOperator.getUserOperator() != null ?
                             entityOperator.getUserOperator().generateRoleBinding(namespace) : null));

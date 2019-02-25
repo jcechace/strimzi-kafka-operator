@@ -1124,7 +1124,7 @@ public class KafkaAssemblyOperatorTest {
                 mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
                 mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(CrdOperator.class));
         when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleBindingOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
 
         if (openShift) {
