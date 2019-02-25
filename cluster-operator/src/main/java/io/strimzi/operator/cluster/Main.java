@@ -117,7 +117,7 @@ public class Main {
                 config.versions(), config.getImagePullPolicy());
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift,
                 certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations,
-                networkPolicyOperator, podDisruptionBudgetOperator, config.versions(), config.getImagePullPolicy());
+                networkPolicyOperator, podDisruptionBudgetOperator, new ResourceOperatorSupplier(vertx, client, isOpenShift, config.getOperationTimeoutMs()), config.versions(), config.getImagePullPolicy());
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
         if (isOpenShift) {
@@ -130,7 +130,7 @@ public class Main {
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
                 new KafkaMirrorMakerAssemblyOperator(vertx, isOpenShift, certManager, kmmo, secretOperations,
                         configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations,
-                        podDisruptionBudgetOperator, config.versions(), config.getImagePullPolicy());
+                        podDisruptionBudgetOperator, new ResourceOperatorSupplier(vertx, client, isOpenShift, config.getOperationTimeoutMs()), config.versions(), config.getImagePullPolicy());
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
@@ -234,13 +234,21 @@ public class Main {
                     put("strimzi-kafka-broker", "030-ClusterRole-strimzi-kafka-broker.yaml");
                     put("strimzi-entity-operator", "031-ClusterRole-strimzi-entity-operator.yaml");
                     put("strimzi-topic-operator", "032-ClusterRole-strimzi-topic-operator.yaml");
+                    put("strimzi-zookeeper-broker", "033-ClusterRole-strimzi-zookeeper-broker.yaml");
+                    put("strimzi-kafka-mirror-maker-broker", "034-ClusterRole-strimzi-mirror-maker-broker.yaml");
+                    put("strimzi-kafka-connect-broker", "035-ClusterRole-strimzi-connect-broker.yaml");
                 }
             };
 
             for (Map.Entry<String, String> clusterRole : clusterRoles.entrySet()) {
                 log.info("Creating cluster role {}", clusterRole.getKey());
 
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()), Charset.defaultCharset()))) {
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(
+                                Main.class.getResourceAsStream(
+                                        "/cluster-roles/"
+                                                + clusterRole.getValue()),
+                                Charset.defaultCharset()))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
                     KubernetesClusterRole role = cro.convertYamlToClusterRole(yaml);
                     Future fut = cro.reconcile(role.getMetadata().getName(), role);

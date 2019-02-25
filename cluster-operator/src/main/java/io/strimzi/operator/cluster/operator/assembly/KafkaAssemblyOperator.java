@@ -167,6 +167,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
                 .compose(state -> state.getZookeeperDescription())
+                .compose(state -> state.zookeeperInitServiceAccount())
+                .compose(state -> state.zookeeperInitClusterRoleBinding())
                 .compose(state -> state.zkScaleUpStep())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
@@ -879,6 +881,34 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> withVoid(Future<?> r) {
             return r.map(this);
+        }
+
+        Future<ReconciliationState> zookeeperInitServiceAccount() {
+            return withVoid(serviceAccountOperator.reconcile(namespace,
+                    ZookeeperCluster.initContainerServiceAccountName(zkCluster.getCluster()),
+                    zkCluster.generateInitContainerServiceAccount()));
+        }
+
+        Future<ReconciliationState> zookeeperInitClusterRoleBinding() {
+            KubernetesClusterRoleBinding desired = zkCluster.generateClusterRoleBinding(namespace);
+            Future<ReconcileResult<KubernetesClusterRoleBinding>> fut = clusterRoleBindingOperator.reconcile(
+                    ZookeeperCluster.initContainerClusterRoleBindingName(namespace, name), desired);
+
+            Future replacementFut = Future.future();
+
+            fut.setHandler(res -> {
+                if (res.failed()) {
+                    if (desired == null) {
+                        replacementFut.complete();
+                    } else {
+                        replacementFut.fail(res.cause());
+                    }
+                } else {
+                    replacementFut.complete();
+                }
+            });
+
+            return withVoid(replacementFut);
         }
 
         Future<ReconciliationState> zkScaleDown() {
