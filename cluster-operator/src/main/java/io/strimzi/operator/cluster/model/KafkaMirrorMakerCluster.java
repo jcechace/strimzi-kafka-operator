@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -18,6 +20,12 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
@@ -450,5 +458,60 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected String getWhitelist() {
         return whitelist;
+    }
+
+    public ServiceAccount generateInitContainerServiceAccount() {
+        return new ServiceAccountBuilder()
+                .withNewMetadata()
+                .withName(initContainerServiceAccountName(cluster))
+                .withNamespace(namespace)
+                .withOwnerReferences(createOwnerReference())
+                .withLabels(labels.toMap())
+                .endMetadata()
+                .build();
+    }
+
+    /**
+     * Get the name of the mirror maker service account given the name of the {@code mirrorMakerResourceName}.
+     */
+    public static String initContainerServiceAccountName(String mirrorMakerResourceName) {
+        return kafkaMirrorMakerClusterName(mirrorMakerResourceName);
+    }
+
+    /**
+     * Get the name of the mirror maker init container role binding given the name of the {@code namespace} and {@code cluster}.
+     */
+    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
+        return "strimzi-" + namespace + "-" + cluster + "-mirror-maker-init";
+    }
+
+    /**
+     * Creates the ClusterRoleBinding which is used to bind the MirrorMaker SA to the ClusterRole
+     * which permissions the MirrorMaker init container to access K8S nodes.
+     */
+    public KubernetesClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
+        KubernetesSubject ks = new KubernetesSubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(initContainerServiceAccountName(cluster))
+                .withNamespace(assemblyNamespace)
+                .build();
+
+        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+                .withName("strimzi-kafka-mirror-maker-broker")
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("ClusterRole")
+                .build();
+
+        return new KubernetesClusterRoleBindingBuilder()
+                .withNewMetadata()
+                .withName(initContainerClusterRoleBindingName(namespace, cluster))
+                .withNamespace(assemblyNamespace)
+                .withOwnerReferences(createOwnerReference())
+                .withLabels(labels.toMap())
+                .endMetadata()
+                .withSubjects(ks)
+                .withRoleRef(roleRef)
+                .build();
+
     }
 }

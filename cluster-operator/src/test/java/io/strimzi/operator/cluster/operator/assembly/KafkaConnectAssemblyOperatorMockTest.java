@@ -4,8 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
@@ -13,19 +17,28 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
+import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -42,6 +55,11 @@ import java.util.Collections;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(VertxUnitRunner.class)
 public class KafkaConnectAssemblyOperatorMockTest {
@@ -61,6 +79,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
     private Vertx vertx;
     private KafkaConnect cluster;
+    private final boolean openShift = false;
 
     @Before
     public void before() {
@@ -85,6 +104,51 @@ public class KafkaConnectAssemblyOperatorMockTest {
         this.vertx.close();
     }
 
+    private ResourceOperatorSupplier supplierWithMocks() {
+        RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
+
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
+                mock(ServiceOperator.class), routeOps, mock(ZookeeperSetOperator.class),
+                mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
+                mock(PvcOperator.class), mock(DeploymentOperator.class),
+                mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
+                mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(CrdOperator.class));
+        when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+
+        if (openShift) {
+            when(supplier.routeOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.hasAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
+                return new RouteBuilder()
+                        .withNewStatus()
+                        .addNewIngress()
+                        .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
+                        .endIngress()
+                        .endStatus()
+                        .build();
+            });
+        }
+
+        when(supplier.serviceOperations.hasIngressAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.hasNodePort(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i -> {
+            return new ServiceBuilder()
+                    .withNewStatus()
+                    .withNewLoadBalancer()
+                    .withIngress(new LoadBalancerIngressBuilder().withHostname(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com").build())
+                    .endLoadBalancer()
+                    .endStatus()
+                    .withNewSpec()
+                    .withPorts(new ServicePortBuilder().withNodePort(31245).build())
+                    .endSpec()
+                    .build();
+        });
+
+        return supplier;
+    }
+
     private KafkaConnectAssemblyOperator createConnectCluster(TestContext context) {
         CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect>
                 connectOperator = new CrdOperator<>(vertx, mockClient,
@@ -98,7 +162,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 connectOperator,
-                cmops, depops, svcops, secretops, policyops, pdbops, VERSIONS, null);
+                cmops, depops, svcops, secretops, policyops, pdbops, supplierWithMocks(), VERSIONS, null);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
