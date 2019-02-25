@@ -347,6 +347,7 @@ public class TopicOperator extends AbstractModel {
                     .withName(roleBindingName(cluster))
                     .withOwnerReferences(createOwnerReference())
                     .withLabels(labels.toMap())
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withRoleRef(roleRef)
                 .withSubjects(ks)
