@@ -514,12 +514,12 @@ public class ResourceUtils {
         when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i -> {
             return new ServiceBuilder()
                     .withNewStatus()
-                    .withNewLoadBalancer()
-                    .withIngress(new LoadBalancerIngressBuilder().withHostname(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com").build())
-                    .endLoadBalancer()
+                        .withNewLoadBalancer()
+                            .withIngress(new LoadBalancerIngressBuilder().withHostname(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com").build())
+                        .endLoadBalancer()
                     .endStatus()
                     .withNewSpec()
-                    .withPorts(new ServicePortBuilder().withNodePort(31245).build())
+                        .withPorts(new ServicePortBuilder().withNodePort(31245).build())
                     .endSpec()
                     .build();
         });
