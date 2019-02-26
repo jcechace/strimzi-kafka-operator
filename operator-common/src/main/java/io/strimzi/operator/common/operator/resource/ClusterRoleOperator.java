@@ -50,38 +50,7 @@ public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<K
     public static KubernetesClusterRole convertYamlToClusterRole(String yaml) {
         try {
             ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-            Object obj = yamlReader.readValue(yaml, Object.class);
-            KubernetesClusterRole cr = null;
-            if (obj instanceof LinkedHashMap) {
-                List<KubernetesPolicyRule> rules = new ArrayList<>();
-                ArrayList mapRules = (ArrayList) ((LinkedHashMap) obj).get("rules");
-                mapRules.forEach(a -> rules.add(new KubernetesPolicyRuleBuilder()
-                    .withApiGroups(((LinkedHashMap) a).get("apiGroups").toString().replace("[", "").replace("]", ""))
-                    .withResources(((LinkedHashMap) a).get("resources").toString().replace("[", "").replace("]", ""))
-                    .withVerbs(((LinkedHashMap) a).get("verbs").toString().replace("[", "").replace("]", "").split(","))
-                    .build()));
-
-                Map<String, String> labels = new HashMap<>();
-                String[] metadataArray = ((LinkedHashMap) ((LinkedHashMap) obj).get("metadata")).get("labels")
-                        .toString()
-                        .replace("{", "")
-                        .replace("}", "")
-                        .split(",");
-
-                for (int i = 0; i < metadataArray.length; i++) {
-                    labels.put(metadataArray[i].split("=")[0], metadataArray[i].split("=")[1]);
-                }
-
-                cr = new KubernetesClusterRoleBuilder()
-                        .withApiVersion(((LinkedHashMap) obj).get("apiVersion").toString())
-                        .withKind(((LinkedHashMap) obj).get("kind").toString())
-                        .withRules(rules)
-                        .withNewMetadata()
-                        .withName(((LinkedHashMap) ((LinkedHashMap) obj).get("metadata")).get("name").toString())
-                        .withLabels(labels)
-                        .endMetadata()
-                        .build();
-            }
+            KubernetesClusterRole cr = yamlReader.readValue(yaml, KubernetesClusterRole.class);
             return cr;
         } catch (IOException e)   {
             throw new RuntimeException(e);
