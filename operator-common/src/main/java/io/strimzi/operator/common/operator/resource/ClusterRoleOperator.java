@@ -8,10 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRole;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleList;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesPolicyRule;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesPolicyRuleBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -19,11 +16,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient, KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole, Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> {
 

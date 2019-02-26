@@ -21,7 +21,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -216,7 +215,7 @@ public class EntityTopicOperator extends AbstractModel {
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
-        return Collections.singletonList(new ContainerBuilder()
+        return singletonList(new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_CONTAINER_NAME)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
@@ -245,7 +244,7 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        return Collections.singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        return singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
     }
 
     private List<VolumeMount> getVolumeMounts() {
@@ -275,7 +274,7 @@ public class EntityTopicOperator extends AbstractModel {
                     .withLabels(labels.toMap())
                 .endMetadata()
                 .withRoleRef(roleRef)
-                .withSubjects(Collections.singletonList(ks))
+                .withSubjects(singletonList(ks))
                 .build();
 
         return rb;
