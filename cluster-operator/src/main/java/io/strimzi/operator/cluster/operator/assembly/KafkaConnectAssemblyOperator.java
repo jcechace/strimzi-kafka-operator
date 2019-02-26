@@ -135,7 +135,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     Future connectInitServiceAccount(String namespace, KafkaConnectCluster connect) {
         return serviceAccountOperations.reconcile(namespace,
                 KafkaConnectCluster.initContainerServiceAccountName(connect.getCluster()),
-                connect.generateInitContainerServiceAccount());
+                connect.generateServiceAccount());
     }
 
     Future connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connect) {

@@ -886,7 +886,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zookeeperInitServiceAccount() {
             return withVoid(serviceAccountOperator.reconcile(namespace,
                     ZookeeperCluster.initContainerServiceAccountName(zkCluster.getCluster()),
-                    zkCluster.generateInitContainerServiceAccount()));
+                    zkCluster.generateServiceAccount()));
         }
 
         Future<ReconciliationState> zookeeperInitClusterRoleBinding() {
@@ -1096,7 +1096,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaInitServiceAccount() {
             return withVoid(serviceAccountOperator.reconcile(namespace,
                     KafkaCluster.initContainerServiceAccountName(kafkaCluster.getCluster()),
-                    kafkaCluster.generateInitContainerServiceAccount()));
+                    kafkaCluster.generateServiceAccount()));
         }
 
         Future<ReconciliationState> kafkaInitClusterRoleBinding() {

@@ -139,7 +139,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
     Future mirrorMakerInitServiceAccount(String namespace, KafkaMirrorMakerCluster mirror) {
         return serviceAccountOperations.reconcile(namespace,
                 KafkaMirrorMakerCluster.initContainerServiceAccountName(mirror.getCluster()),
-                mirror.generateInitContainerServiceAccount());
+                mirror.generateServiceAccount());
     }
 
     Future mirrorMakerInitClusterRoleBinding(String namespace, String name, KafkaMirrorMakerCluster mirror) {

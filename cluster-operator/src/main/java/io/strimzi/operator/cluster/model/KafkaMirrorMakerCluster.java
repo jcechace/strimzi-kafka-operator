@@ -10,8 +10,6 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -460,15 +458,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return whitelist;
     }
 
-    public ServiceAccount generateInitContainerServiceAccount() {
-        return new ServiceAccountBuilder()
-                .withNewMetadata()
-                .withName(initContainerServiceAccountName(cluster))
-                .withNamespace(namespace)
-                .withOwnerReferences(createOwnerReference())
-                .withLabels(labels.toMap())
-                .endMetadata()
-                .build();
+    @Override
+    protected String getServiceAccountName() {
+        return initContainerServiceAccountName(cluster);
     }
 
     /**

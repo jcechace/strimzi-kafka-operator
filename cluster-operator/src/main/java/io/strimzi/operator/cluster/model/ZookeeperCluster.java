@@ -14,8 +14,6 @@ import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -532,15 +530,11 @@ public class ZookeeperCluster extends AbstractModel {
                 .build();
     }
 
-    public ServiceAccount generateInitContainerServiceAccount() {
-        return new ServiceAccountBuilder()
-                .withNewMetadata()
-                    .withName(initContainerServiceAccountName(cluster))
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
-                    .withLabels(labels.toMap())
-                .endMetadata()
-                .build();
+    @Override
+    protected String getServiceAccountName() {
+        return initContainerServiceAccountName(cluster);
     }
+
+
 
 }
