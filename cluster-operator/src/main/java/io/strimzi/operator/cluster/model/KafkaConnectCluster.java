@@ -556,7 +556,7 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * Get the name of the onnect service account given the name of the {@code connectResourceName}.
+     * Get the name of the connect service account given the name of the {@code connectResourceName}.
      */
     public static String initContainerServiceAccountName(String connectResourceName) {
         return kafkaConnectClusterName(connectResourceName);
@@ -581,17 +581,17 @@ public class KafkaConnectCluster extends AbstractModel {
                 .build();
 
         KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
-                .withName("strimzi-kafka-connect-broker")
+                .withName("strimzi-kafka-connect-cluster")
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
         return new KubernetesClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName(initContainerClusterRoleBindingName(namespace, cluster))
-                .withNamespace(assemblyNamespace)
-                .withOwnerReferences(createOwnerReference())
-                .withLabels(labels.toMap())
+                    .withName(initContainerClusterRoleBindingName(namespace, cluster))
+                    .withNamespace(assemblyNamespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
                 .endMetadata()
                 .withSubjects(ks)
                 .withRoleRef(roleRef)

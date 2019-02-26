@@ -112,7 +112,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
         return  connectInitServiceAccount(namespace, connect)
-                .compose(i -> connectMakerInitClusterRoleBinding(namespace, name, connect))
+                .compose(i -> connectInitClusterRoleBinding(namespace, name, connect))
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
@@ -138,7 +138,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                 connect.generateInitContainerServiceAccount());
     }
 
-    Future connectMakerInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connect) {
+    Future connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connect) {
 
         KubernetesClusterRoleBinding desired = connect.generateClusterRoleBinding(namespace);
         Future<ReconcileResult<KubernetesClusterRoleBinding>> fut = clusterRoleBindingOperations.reconcile(

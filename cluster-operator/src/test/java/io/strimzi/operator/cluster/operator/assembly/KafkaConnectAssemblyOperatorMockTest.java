@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
@@ -79,7 +80,6 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
     private Vertx vertx;
     private KafkaConnect cluster;
-    private final boolean openShift = false;
 
     @Before
     public void before() {
@@ -104,51 +104,6 @@ public class KafkaConnectAssemblyOperatorMockTest {
         this.vertx.close();
     }
 
-    private ResourceOperatorSupplier supplierWithMocks() {
-        RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
-
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
-                mock(ServiceOperator.class), routeOps, mock(ZookeeperSetOperator.class),
-                mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
-                mock(PvcOperator.class), mock(DeploymentOperator.class),
-                mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
-                mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(CrdOperator.class));
-        when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
-
-        if (openShift) {
-            when(supplier.routeOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.hasAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
-                return new RouteBuilder()
-                        .withNewStatus()
-                        .addNewIngress()
-                        .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
-                        .endIngress()
-                        .endStatus()
-                        .build();
-            });
-        }
-
-        when(supplier.serviceOperations.hasIngressAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceOperations.hasNodePort(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i -> {
-            return new ServiceBuilder()
-                    .withNewStatus()
-                    .withNewLoadBalancer()
-                    .withIngress(new LoadBalancerIngressBuilder().withHostname(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com").build())
-                    .endLoadBalancer()
-                    .endStatus()
-                    .withNewSpec()
-                    .withPorts(new ServicePortBuilder().withNodePort(31245).build())
-                    .endSpec()
-                    .build();
-        });
-
-        return supplier;
-    }
-
     private KafkaConnectAssemblyOperator createConnectCluster(TestContext context) {
         CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect>
                 connectOperator = new CrdOperator<>(vertx, mockClient,
@@ -162,7 +117,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 connectOperator,
-                cmops, depops, svcops, secretops, policyops, pdbops, supplierWithMocks(), VERSIONS, null);
+                cmops, depops, svcops, secretops, policyops, pdbops, ResourceUtils.supplierWithMocks(true), VERSIONS, null);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
