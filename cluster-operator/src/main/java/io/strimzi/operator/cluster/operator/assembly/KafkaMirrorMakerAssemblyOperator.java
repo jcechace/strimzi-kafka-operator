@@ -68,7 +68,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
      * @param configMapOperations        For operating on ConfigMaps
      * @param secretOperations           For operating on Secrets
      */
-    public KafkaMirrorMakerAssemblyOperator(Vertx vertx,  boolean isOpenShift,
+    public KafkaMirrorMakerAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                             CertManager certManager,
                                             CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> mirrorMakerOperator,
                                             SecretOperator secretOperations,

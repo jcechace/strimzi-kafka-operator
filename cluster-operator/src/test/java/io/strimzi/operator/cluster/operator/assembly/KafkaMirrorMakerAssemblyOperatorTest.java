@@ -89,7 +89,6 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     private final int numStreams = 2;
     private final String whitelist = ".*";
     private final String image = "my-image:latest";
-    private final boolean openShift = false;
 
     @BeforeClass
     public static void before() {
@@ -99,51 +98,6 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     @AfterClass
     public static void after() {
         vertx.close();
-    }
-
-    private ResourceOperatorSupplier supplierWithMocks() {
-        RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
-
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
-                mock(ServiceOperator.class), routeOps, mock(ZookeeperSetOperator.class),
-                mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
-                mock(PvcOperator.class), mock(DeploymentOperator.class),
-                mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
-                mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(CrdOperator.class));
-        when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
-
-        if (openShift) {
-            when(supplier.routeOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.hasAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
-                return new RouteBuilder()
-                        .withNewStatus()
-                        .addNewIngress()
-                        .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
-                        .endIngress()
-                        .endStatus()
-                        .build();
-            });
-        }
-
-        when(supplier.serviceOperations.hasIngressAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceOperations.hasNodePort(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i -> {
-            return new ServiceBuilder()
-                    .withNewStatus()
-                    .withNewLoadBalancer()
-                    .withIngress(new LoadBalancerIngressBuilder().withHostname(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com").build())
-                    .endLoadBalancer()
-                    .endStatus()
-                    .withNewSpec()
-                    .withPorts(new ServicePortBuilder().withNodePort(31245).build())
-                    .endSpec()
-                    .build();
-        });
-
-        return supplier;
     }
 
     @Test
@@ -184,7 +138,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockMirrorOps,
@@ -289,7 +243,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockMirrorOps,
@@ -409,7 +363,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
             return Future.succeededFuture();
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockMirrorOps,
@@ -520,7 +474,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockMirrorOps,
@@ -591,7 +545,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockMirrorOps,
@@ -664,7 +618,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockMirrorOps,
@@ -739,7 +693,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         Async async = context.async(2);
 
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockMirrorOps,

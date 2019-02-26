@@ -497,17 +497,17 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 .build();
 
         KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
-                .withName("strimzi-kafka-mirror-maker-broker")
+                .withName("strimzi-kafka-mirror-maker-cluster")
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
         return new KubernetesClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName(initContainerClusterRoleBindingName(namespace, cluster))
-                .withNamespace(assemblyNamespace)
-                .withOwnerReferences(createOwnerReference())
-                .withLabels(labels.toMap())
+                    .withName(initContainerClusterRoleBindingName(namespace, cluster))
+                    .withNamespace(assemblyNamespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
                 .endMetadata()
                 .withSubjects(ks)
                 .withRoleRef(roleRef)
