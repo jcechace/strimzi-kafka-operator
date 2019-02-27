@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -22,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Predicate;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -217,22 +215,5 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                     .list()
                     .getItems();
         }
-    }
-
-    /**
-     * Returns a future that completes when the resource identified by the given {@code name}
-     * is ready.
-     *
-     * @param name The resource name.
-     * @param pollIntervalMs The poll interval in milliseconds.
-     * @param timeoutMs The timeout, in milliseconds.
-     * @param predicate The predicate.
-     */
-    public Future<Void> waitFor(String name, long pollIntervalMs, final long timeoutMs, Predicate<String> predicate) {
-        return Util.waitFor(vertx,
-            String.format("%s resource %s", resourceKind, name),
-            pollIntervalMs,
-            timeoutMs,
-            () -> predicate.test(name));
     }
 }
