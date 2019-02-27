@@ -234,9 +234,6 @@ public class Main {
                     put("strimzi-kafka-broker", "030-ClusterRole-strimzi-kafka-broker.yaml");
                     put("strimzi-entity-operator", "031-ClusterRole-strimzi-entity-operator.yaml");
                     put("strimzi-topic-operator", "032-ClusterRole-strimzi-topic-operator.yaml");
-                    put("strimzi-zookeeper-cluster", "033-ClusterRole-strimzi-zookeeper-cluster.yaml");
-                    put("strimzi-kafka-mirror-maker-cluster", "034-ClusterRole-strimzi-mirror-maker-cluster.yaml");
-                    put("strimzi-kafka-connect-cluster", "035-ClusterRole-strimzi-connect-cluster.yaml");
                 }
             };
 

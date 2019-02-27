@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
@@ -28,7 +27,6 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -113,7 +111,6 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
         log.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation, name, namespace);
         return mirrorMakerInitServiceAccount(namespace, mirror)
-                .compose(i -> mirrorMakerInitClusterRoleBinding(namespace, name, mirror))
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, mirror.getServiceName(), mirror.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, mirror.getAncillaryConfigName(), logAndMetricsConfigMap))
@@ -140,28 +137,5 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         return serviceAccountOperations.reconcile(namespace,
                 KafkaMirrorMakerCluster.initContainerServiceAccountName(mirror.getCluster()),
                 mirror.generateServiceAccount());
-    }
-
-    Future mirrorMakerInitClusterRoleBinding(String namespace, String name, KafkaMirrorMakerCluster mirror) {
-
-        KubernetesClusterRoleBinding desired = mirror.generateClusterRoleBinding(namespace);
-        Future<ReconcileResult<KubernetesClusterRoleBinding>> fut = clusterRoleBindingOperations.reconcile(
-                KafkaMirrorMakerCluster.initContainerClusterRoleBindingName(namespace, name), desired);
-
-        Future replacementFut = Future.future();
-
-        fut.setHandler(res -> {
-            if (res.failed()) {
-                if (desired == null) {
-                    replacementFut.complete();
-                } else {
-                    replacementFut.fail(res.cause());
-                }
-            } else {
-                replacementFut.complete();
-            }
-        });
-
-        return replacementFut;
     }
 }

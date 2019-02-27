@@ -25,12 +25,6 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -552,41 +546,5 @@ public class KafkaConnectCluster extends AbstractModel {
      */
     public static String initContainerServiceAccountName(String connectResourceName) {
         return kafkaConnectClusterName(connectResourceName);
-    }
-
-    /**
-     * Get the name of the connect init container role binding given the name of the {@code namespace} and {@code cluster}.
-     */
-    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
-        return "strimzi-" + namespace + "-" + cluster + "-connect-init";
-    }
-
-    /**
-     * Creates the ClusterRoleBinding which is used to bind the Connect SA to the ClusterRole
-     * which permissions the Connect init container to access K8S nodes.
-     */
-    public KubernetesClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
-        KubernetesSubject ks = new KubernetesSubjectBuilder()
-                .withKind("ServiceAccount")
-                .withName(initContainerServiceAccountName(cluster))
-                .withNamespace(assemblyNamespace)
-                .build();
-
-        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
-                .withName("strimzi-kafka-connect-cluster")
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("ClusterRole")
-                .build();
-
-        return new KubernetesClusterRoleBindingBuilder()
-                .withNewMetadata()
-                    .withName(initContainerClusterRoleBindingName(namespace, cluster))
-                    .withNamespace(assemblyNamespace)
-                    .withOwnerReferences(createOwnerReference())
-                    .withLabels(labels.toMap())
-                .endMetadata()
-                .withSubjects(ks)
-                .withRoleRef(roleRef)
-                .build();
     }
 }

@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
@@ -28,7 +27,6 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -112,7 +110,6 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
         return  connectInitServiceAccount(namespace, connect)
-                .compose(i -> connectInitClusterRoleBinding(namespace, name, connect))
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
@@ -136,28 +133,5 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
         return serviceAccountOperations.reconcile(namespace,
                 KafkaConnectCluster.initContainerServiceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());
-    }
-
-    Future connectInitClusterRoleBinding(String namespace, String name, KafkaConnectCluster connect) {
-
-        KubernetesClusterRoleBinding desired = connect.generateClusterRoleBinding(namespace);
-        Future<ReconcileResult<KubernetesClusterRoleBinding>> fut = clusterRoleBindingOperations.reconcile(
-                KafkaConnectCluster.initContainerClusterRoleBindingName(namespace, name), desired);
-
-        Future replacementFut = Future.future();
-
-        fut.setHandler(res -> {
-            if (res.failed()) {
-                if (desired == null) {
-                    replacementFut.complete();
-                } else {
-                    replacementFut.fail(res.cause());
-                }
-            } else {
-                replacementFut.complete();
-            }
-        });
-
-        return replacementFut;
     }
 }

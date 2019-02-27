@@ -25,12 +25,6 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilde
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -493,48 +487,8 @@ public class ZookeeperCluster extends AbstractModel {
         return zookeeperClusterName(zookeeperResourceName);
     }
 
-    /**
-     * Get the name of the zookeeper init container role binding given the name of the {@code namespace} and {@code cluster}.
-     */
-    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
-        return "strimzi-" + namespace + "-" + cluster + "-zookeeper-init";
-    }
-
-    /**
-     * Creates the ClusterRoleBinding which is used to bind the Zookeeper SA to the ClusterRole
-     * which permissions the Zookeeper init container to access K8S nodes.
-     */
-    public KubernetesClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
-
-        KubernetesSubject ks = new KubernetesSubjectBuilder()
-                .withKind("ServiceAccount")
-                .withName(initContainerServiceAccountName(cluster))
-                .withNamespace(assemblyNamespace)
-                .build();
-
-        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
-                .withName("strimzi-zookeeper-cluster")
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("ClusterRole")
-                .build();
-
-        return new KubernetesClusterRoleBindingBuilder()
-                .withNewMetadata()
-                    .withName(initContainerClusterRoleBindingName(namespace, cluster))
-                    .withNamespace(assemblyNamespace)
-                    .withOwnerReferences(createOwnerReference())
-                    .withLabels(labels.toMap())
-                .endMetadata()
-                    .withSubjects(ks)
-                    .withRoleRef(roleRef)
-                .build();
-    }
-
     @Override
     protected String getServiceAccountName() {
         return initContainerServiceAccountName(cluster);
     }
-
-
-
 }
