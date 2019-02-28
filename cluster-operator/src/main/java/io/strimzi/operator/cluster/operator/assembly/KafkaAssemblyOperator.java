@@ -1078,12 +1078,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             fut.setHandler(res -> {
                 if (res.failed()) {
-                    if (desired == null) {
-                        String debugMsg = "Ignoring forbidden access to ClusterRoleBindings which seems not needed while Kafka rack awareness is disabled.";
-                        if (res.cause() != null) {
-                            debugMsg += " " + res.cause().getMessage();
-                        }
-                        log.debug(debugMsg);
+                    if (desired == null && res.cause() != null && res.cause().getMessage() != null &&
+                            res.cause().getMessage().contains("Message: Forbidden!")) {
+                        log.debug("Ignoring forbidden access to ClusterRoleBindings which seems not needed while Kafka rack awareness is disabled.");
                         replacementFut.complete();
                     } else {
                         replacementFut.fail(res.cause());
